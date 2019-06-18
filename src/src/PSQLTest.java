@@ -26,6 +26,8 @@ import javax.swing.SpinnerDateModel;
 
 import src.DBScheme.ConsumptionsTable;
 import src.DBScheme.ConsumptionsTable.*;
+import src.DBScheme.IncomeTable;
+
 import javax.swing.JLabel;
 import java.awt.Color;
 import java.awt.Font;
@@ -57,18 +59,14 @@ public class PSQLTest extends JFrame{
 		getContentPane().add(txtField);
 		txtField.setColumns(10);
 		
-		txtStatus = new JTextPane();
-		txtStatus.setText("status");
-		txtStatus.setBounds(24, 430, 351, 20);
-		getContentPane().add(txtStatus);
-		
 		comboType = new JComboBox();
 		comboType.setModel(new DefaultComboBoxModel(new String[] {"\u0435\u0434\u0430", "\u0445\u043E\u0437\u0442\u043E\u0432\u0430\u0440\u044B", "\u043C\u0435\u0434\u0435\u0446\u0438\u043D\u0430", "\u0441\u0447\u0435\u0442\u0430", "\u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442", "\u043E\u0434\u0435\u0436\u0434\u0430", "\u0440\u0430\u0437\u0432\u043B\u0435\u0447\u0435\u043D\u0438\u0435", "\u0434\u0440\u0443\u0433\u043E\u0435"}));
 		comboType.setBounds(24, 168, 136, 22);
 		getContentPane().add(comboType);
 		
 		spinDate = new JSpinner();
-		spinDate.setModel(new SpinnerDateModel(new Date(1560531600000L), new Date(1560531600000L), new Date(1592154000000L), Calendar.DAY_OF_YEAR));
+		spinDate.setModel(new SpinnerDateModel(new Date(), new Date(1560531600000L), new Date(1592154000000L), Calendar.DAY_OF_YEAR));
+		//spinDate.set
 		spinDate.setBounds(24, 201, 136, 20);
 		getContentPane().add(spinDate);
 		
@@ -77,17 +75,22 @@ public class PSQLTest extends JFrame{
 		getContentPane().add(txIncome);
 		txIncome.setColumns(10);
 		
-		JComboBox comboIncomer = new JComboBox();
+		comboIncomer = new JComboBox();
 		comboIncomer.setModel(new DefaultComboBoxModel(new String[] {"\u043C\u0443\u0436", "\u0436\u0435\u043D\u0430", "\u0434\u0440\u0443\u0433\u043E\u0435"}));
 		comboIncomer.setBounds(205, 63, 136, 22);
 		getContentPane().add(comboIncomer);
 		
-		JSpinner spinIncomeDate = new JSpinner();
+		spinIncomeDate = new JSpinner();
 		spinIncomeDate.setModel(new SpinnerDateModel(new Date(1560531600000L), new Date(1560531600000L), new Date(1592154000000L), Calendar.MONTH));
 		spinIncomeDate.setBounds(205, 96, 121, 20);
 		getContentPane().add(spinIncomeDate);
 		
 		JButton btnAddIncome = new JButton("\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0434\u043E\u0445\u043E\u0434");
+		btnAddIncome.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				addIncome();
+			}
+		});
 		btnAddIncome.setBounds(205, 127, 136, 23);
 		getContentPane().add(btnAddIncome);
 		
@@ -149,21 +152,66 @@ public class PSQLTest extends JFrame{
 		lblMonthCost.setForeground(Color.BLUE);
 		lblMonthCost.setBounds(284, 222, 46, 14);
 		getContentPane().add(lblMonthCost);
+		
+		txtStatus = new JLabel("porodem@gmail.com");
+		txtStatus.setFont(new Font("Tahoma", Font.PLAIN, 11));
+		txtStatus.setBounds(24, 430, 351, 14);
+		getContentPane().add(txtStatus);
+		
+		dbhelper = new DBHelper();
+		txtStatus.setText(dbhelper.isConnectOk()?"connected":"conection failed");
 	}
-	
-	private final String url = "jdbc:postgresql://localhost/demo";
-    private final String user = "postgres";
-    private final String password = "jkl";
+    
+    DBHelper dbhelper;
    
     private JTextField txCost;
-    private JTextField txtField;
-    private JTextPane txtStatus;
+    private JTextField txtField; //Big field
     private JComboBox comboType;
     private JSpinner spinDate;
+    private JSpinner spinIncomeDate;
     private JTextField txIncome;
     private JCheckBox chckbxUnexp;
+    private JComboBox comboIncomer;
     private JTextField txItem;
     private JLabel lblTodayCost;
+    private JLabel txtStatus;
+    
+    String addedTodayLog = "";
+    
+    public void showTodayList(String newRec) {
+    	addedTodayLog = addedTodayLog + "\n" + newRec;
+    	txtField.setText(addedTodayLog);
+    	
+    }
+    
+    public void addIncome() {
+    	int rub = Integer.valueOf(txIncome.getText());
+    	String incomer = (String)comboIncomer.getSelectedItem();
+    	Date d = (Date)spinIncomeDate.getValue();
+    	String date = new SimpleDateFormat("YYYY-MM-dd").format(d);
+    	java.sql.Date sqlDate = java.sql.Date.valueOf(date);
+    	
+    	String SQL = "INSERT INTO " +
+    			IncomeTable.NAME + "(" +
+    			IncomeTable.Cols.RUB + ", " +
+    			IncomeTable.Cols.INCOMER + ", " +
+    			IncomeTable.Cols.DATE +
+    			" ) values(?,?,?)";
+    	
+    	try(Connection conn = dbhelper.connect();
+    			PreparedStatement pstmt = conn.prepareStatement(SQL)){
+    		pstmt.setInt(1, rub);
+    		pstmt.setString(2, incomer);
+    		pstmt.setDate(3, sqlDate);
+    		
+    		ResultSet rs = pstmt.executeQuery();
+    	}
+    	catch(SQLException e) {
+    		System.out.print("ex:");
+    		System.out.print(e.getMessage());
+    	}  
+    	
+    }
     
     
     public void addConsumption() {
@@ -179,7 +227,7 @@ public class PSQLTest extends JFrame{
     	boolean unexpectedCons = chckbxUnexp.isSelected(); 
     	int unexp = unexpectedCons?1:0;
     	  	
-    	txtStatus.setText(category + " " + date + " " + rub + " chkbx:"+ unexpectedCons);
+    	//txtStatus.setText(category + " " + date + " " + rub + " chkbx:"+ unexpectedCons);
     	
     	String SQL = "INSERT INTO " +
 				ConsumptionsTable.NAME + "( " +
@@ -189,9 +237,8 @@ public class PSQLTest extends JFrame{
 						 ConsumptionsTable.Cols.RUB + ", " +
 						 ConsumptionsTable.Cols.UNEXP
 						+ " ) values(?,?,?,?,?)";
-    	txtField.setText(SQL);
-    	DBHelper db = new DBHelper();
-    	try(Connection conn = db.connect();
+    	//txtField.setText(SQL);
+    	try(Connection conn = dbhelper.connect();
     			PreparedStatement pstmt = conn.prepareStatement(SQL)){
     		pstmt.setDate(1, sqlDate);
     		pstmt.setString(2, item);
@@ -210,6 +257,7 @@ public class PSQLTest extends JFrame{
     	txCost.setText("");
     	getTodayCost();
     	
+    	showTodayList(date + " " + item + " " + category + " " +  rub + ".rub");
     }
     
     public void getTodayCost() {
@@ -235,10 +283,13 @@ public class PSQLTest extends JFrame{
     		
     		
     		//System.out.println(String.valueOf(rs.getInt(ConsumptionsTable.Cols.RUB)));
-    		lblTodayCost.setText(String.valueOf(rs.getInt("sum")));
+    		String todayCost = String.valueOf(rs.getInt("sum"));
+    		this.showLog(todayCost);
+    		lblTodayCost.setText(todayCost);
+    		//txtStatus.setText(db.getStatus());
     		
     	} catch(SQLException e) {
-    		System.out.print("ex:");
+    		System.out.print("ex todayCost:");
     		System.out.print(e.getMessage());
     	}  	    
     }
@@ -270,6 +321,10 @@ public class PSQLTest extends JFrame{
     
     public void refreshStatus(String newStatus) {
     	txtStatus.setText(newStatus);
+    }
+    
+    public void showLog(String msg) {
+    	System.out.println("Log: " + msg);
     }
 
 	public static void main(String[] args) {
