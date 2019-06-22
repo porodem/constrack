@@ -24,16 +24,22 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SpinnerDateModel;
 
-import src.DBScheme.ConsumptionsTable;
-import src.DBScheme.ConsumptionsTable.*;
-import src.DBScheme.IncomeTable;
+import src.DBScheme2.ConsumptionsTable;
+import src.DBScheme2.ConsumptionsTable.*;
+import src.DBScheme2.IncomeTable;
 
 import javax.swing.JLabel;
 import java.awt.Color;
 import java.awt.Font;
+import javax.swing.SwingConstants;
+import java.awt.Component;
+import javax.swing.JTextArea;
 
-
+//change import src.DBScheme2 to select right DB
 public class PSQLTest extends JFrame{
+	
+	private final String WARNING_NUM = "В поле сумма (руб.) допустимы только цифры!";
+	private final String WARNING_DB_WRITE = "Ошибка записи в базу";
 	
 	public PSQLTest() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -53,11 +59,6 @@ public class PSQLTest extends JFrame{
 		});
 		btnAddRec.setBounds(24, 232, 136, 23);
 		getContentPane().add(btnAddRec);
-		
-		txtField = new JTextField();
-		txtField.setBounds(24, 283, 351, 136);
-		getContentPane().add(txtField);
-		txtField.setColumns(10);
 		
 		comboType = new JComboBox();
 		comboType.setModel(new DefaultComboBoxModel(new String[] {"\u0435\u0434\u0430", "\u0445\u043E\u0437\u0442\u043E\u0432\u0430\u0440\u044B", "\u043C\u0435\u0434\u0435\u0446\u0438\u043D\u0430", "\u0441\u0447\u0435\u0442\u0430", "\u0442\u0440\u0430\u043D\u0441\u043F\u043E\u0440\u0442", "\u043E\u0434\u0435\u0436\u0434\u0430", "\u0440\u0430\u0437\u0432\u043B\u0435\u0447\u0435\u043D\u0438\u0435", "\u0434\u0440\u0443\u0433\u043E\u0435"}));
@@ -126,7 +127,6 @@ public class PSQLTest extends JFrame{
 		JLabel label_3 = new JLabel("\u0420\u0430\u0441\u0445\u043E\u0434\u044B \u0441\u0435\u0433\u043E\u0434\u043D\u044F");
 		label_3.setBounds(182, 172, 96, 14);
 		getContentPane().add(label_3);
-		
 		lblTodayCost = new JLabel("0");
 		lblTodayCost.setFont(new Font("Tahoma", Font.BOLD, 11));
 		lblTodayCost.setForeground(Color.BLACK);
@@ -159,13 +159,18 @@ public class PSQLTest extends JFrame{
 		getContentPane().add(txtStatus);
 		
 		dbhelper = new DBHelper();
-		txtStatus.setText(dbhelper.isConnectOk()?"connected":"conection failed");
+		txtStatus.setText(dbhelper.isConnectOk()?"connected" :"conection failed");
+		
+		textArea = new JTextArea();
+		textArea.setBounds(24, 283, 317, 134);
+		getContentPane().add(textArea);
 	}
     
     DBHelper dbhelper;
+    
+    
    
     private JTextField txCost;
-    private JTextField txtField; //Big field
     private JComboBox comboType;
     private JSpinner spinDate;
     private JSpinner spinIncomeDate;
@@ -175,149 +180,75 @@ public class PSQLTest extends JFrame{
     private JTextField txItem;
     private JLabel lblTodayCost;
     private JLabel txtStatus;
+    private JTextArea textArea;       
     
     String addedTodayLog = "";
+    String recordInfo = "";
     
-    public void showTodayList(String newRec) {
-    	addedTodayLog = addedTodayLog + "\n" + newRec;
-    	txtField.setText(addedTodayLog);
-    	
+    public void updateTextArea(String newRec) {
+    	addedTodayLog = addedTodayLog + "\n " + newRec;
+    	textArea.setText(addedTodayLog);    	
     }
     
     public void addIncome() {
+    	
+    	if(!isInteger(txIncome.getText())) {
+    		updateTextArea(WARNING_NUM);
+    		return;
+    	}
+    	
     	int rub = Integer.valueOf(txIncome.getText());
     	String incomer = (String)comboIncomer.getSelectedItem();
     	Date d = (Date)spinIncomeDate.getValue();
-    	String date = new SimpleDateFormat("YYYY-MM-dd").format(d);
-    	java.sql.Date sqlDate = java.sql.Date.valueOf(date);
     	
-    	String SQL = "INSERT INTO " +
-    			IncomeTable.NAME + "(" +
-    			IncomeTable.Cols.RUB + ", " +
-    			IncomeTable.Cols.INCOMER + ", " +
-    			IncomeTable.Cols.DATE +
-    			" ) values(?,?,?)";
-    	
-    	try(Connection conn = dbhelper.connect();
-    			PreparedStatement pstmt = conn.prepareStatement(SQL)){
-    		pstmt.setInt(1, rub);
-    		pstmt.setString(2, incomer);
-    		pstmt.setDate(3, sqlDate);
-    		
-    		ResultSet rs = pstmt.executeQuery();
+    	boolean querySuccess = dbhelper.addIncome(rub, incomer, d);
+    	if(querySuccess) {
+    		updateTextArea("Учтен доход: " + incomer + " " +  rub + ".rub");
+    	} else {
+    		updateTextArea(WARNING_DB_WRITE);
     	}
-    	catch(SQLException e) {
-    		System.out.print("ex:");
-    		System.out.print(e.getMessage());
-    	}  
     	
-    }
-    
+    	txItem.setText("");
+    	txCost.setText("");
+    }    
     
     public void addConsumption() {
+    	
+    	if(!isInteger(txCost.getText())) {
+    		updateTextArea(WARNING_NUM);
+    		return;
+    	}
+    	
     	String category = (String)comboType.getSelectedItem();
-    	Date d = (Date)spinDate.getValue();
-    	String date = new SimpleDateFormat("YYYY-MM-dd").format(d);
-    	java.sql.Date sqlDate = java.sql.Date.valueOf(date);
+    	Date d = (Date)spinDate.getValue();    	
     	int rub = Integer.valueOf(txCost.getText());
-    	String item = txItem.getText();
-    	
-    	
+    	String item = txItem.getText(); 	
     	
     	boolean unexpectedCons = chckbxUnexp.isSelected(); 
     	int unexp = unexpectedCons?1:0;
-    	  	
-    	//txtStatus.setText(category + " " + date + " " + rub + " chkbx:"+ unexpectedCons);
     	
-    	String SQL = "INSERT INTO " +
-				ConsumptionsTable.NAME + "( " +
-						 ConsumptionsTable.Cols.DATE + ", " +
-						 ConsumptionsTable.Cols.ITEM + ", " + 
-						 ConsumptionsTable.Cols.CATEGORY + ", " +
-						 ConsumptionsTable.Cols.RUB + ", " +
-						 ConsumptionsTable.Cols.UNEXP
-						+ " ) values(?,?,?,?,?)";
-    	//txtField.setText(SQL);
-    	try(Connection conn = dbhelper.connect();
-    			PreparedStatement pstmt = conn.prepareStatement(SQL)){
-    		pstmt.setDate(1, sqlDate);
-    		pstmt.setString(2, item);
-    		pstmt.setString(3, category);
-    		pstmt.setInt(4, rub);
-    		pstmt.setInt(5, unexp);
-    		
-    		ResultSet rs = pstmt.executeQuery();
-    	}
-    	catch(SQLException e) {
-    		System.out.print("ex:");
-    		System.out.print(e.getMessage());
-    	}  
+    	
+    	boolean querySuccess = dbhelper.addConsumption(d, item, category, rub, unexp);
+    	if(querySuccess) {
+    		updateTextArea("Учтен расход: " + item + " " + category + " " +  rub + ".rub");
+    	} else {
+    		updateTextArea(WARNING_DB_WRITE);
+    	}  	    	
     	
     	txItem.setText("");
     	txCost.setText("");
     	getTodayCost();
     	
-    	showTodayList(date + " " + item + " " + category + " " +  rub + ".rub");
+    	updateTextArea(recordInfo);
     }
     
-    public void getTodayCost() {
-    	//String today = new SimpleDateFormat("YYYY-MM-dd").format(new Date().getTime());
-    	LocalDate today = LocalDate.now();
-    	java.sql.Date sqlDate = new java.sql.Date(new Date().getTime());
-    	String SQL = "SELECT SUM(" +
-    			ConsumptionsTable.Cols.RUB +
-    			") FROM " +
-    			ConsumptionsTable.NAME +
-    					" where " +
-    					ConsumptionsTable.Cols.DATE + 
-    			" = ?";
-    	DBHelper db = new DBHelper();
-    	try(Connection conn = db.connect();
-    			PreparedStatement pstmt = conn.prepareStatement(SQL)) {
-    		
-    		pstmt.setDate(1, sqlDate);
-    		
-    		ResultSet rs = pstmt.executeQuery();
-    		
-    		rs.next();
-    		
-    		
-    		//System.out.println(String.valueOf(rs.getInt(ConsumptionsTable.Cols.RUB)));
-    		String todayCost = String.valueOf(rs.getInt("sum"));
+    public void getTodayCost() {    		
+    		String todayCost = dbhelper.getTodayCost();
     		this.showLog(todayCost);
-    		lblTodayCost.setText(todayCost);
-    		//txtStatus.setText(db.getStatus());
-    		
-    	} catch(SQLException e) {
-    		System.out.print("ex todayCost:");
-    		System.out.print(e.getMessage());
-    	}  	    
+    		lblTodayCost.setText(todayCost); 
     }
     
-    public void getFood(String pattern, int cost) {
-    	String SQL = "SELECT * FROM " +
-    			ConsumptionsTable.NAME +
-    					" where RUB > ? and ITEM = ?";
-    	DBHelper db = new DBHelper();
-    	try(Connection conn = db.connect();
-    			PreparedStatement pstmt = conn.prepareStatement(SQL)) {
-    		
-    		pstmt.setInt(1, cost);
-    		pstmt.setString(2, pattern);
-    		
-    		ResultSet rs = pstmt.executeQuery();
-    		
-    		while(rs.next()) {
-    			System.out.println(String.format("%s %d",
-    					rs.getString("item"),
-    					rs.getInt("rub")));
-    		}
-    		
-    	} catch(SQLException e) {
-    		System.out.print("ex:");
-    		System.out.print(e.getMessage());
-    	}  	    	
-    }
+   
     
     public void refreshStatus(String newStatus) {
     	txtStatus.setText(newStatus);
@@ -326,15 +257,37 @@ public class PSQLTest extends JFrame{
     public void showLog(String msg) {
     	System.out.println("Log: " + msg);
     }
+    
+    
+    //check if user input only numbers for RUB value
+    public static boolean isInteger(String str) {
+        if (str == null) {
+            return false;
+        }
+        int length = str.length();
+        if (length == 0) {
+            return false;
+        }
+        int i = 0;
+        if (str.charAt(0) == '-') {
+            if (length == 1) {
+                return false;
+            }
+            i = 1;
+        }
+        for (; i < length; i++) {
+            char c = str.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		//DBHelper dbh = new DBHelper();
-		//dbh.connect();
 		PSQLTest t = new PSQLTest();
 		t.setSize(new Dimension(400,500));
 		t.setVisible(true);
 		t.getTodayCost();
-		//t.getFood();
 	}
 }

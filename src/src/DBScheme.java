@@ -24,4 +24,6 @@ public class DBScheme {
 			public static final String DATE = "ddate";
 		}
 	}
+	
+
 }
