@@ -1,4 +1,4 @@
-package src;
+package ru.porodem.constrack;
 
 
 import java.awt.Dimension;
@@ -11,6 +11,8 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -24,14 +26,11 @@ import javax.swing.JTextField;
 import javax.swing.JTextPane;
 import javax.swing.SpinnerDateModel;
 
-import src.DBScheme2.ConsumptionsTable;
-import src.DBScheme2.ConsumptionsTable.*;
-import src.DBScheme2.IncomeTable;
-
 import javax.swing.JLabel;
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.SwingConstants;
+
 import java.awt.Component;
 import javax.swing.JTextArea;
 
@@ -39,7 +38,7 @@ import javax.swing.JTextArea;
 public class PSQLTest extends JFrame{
 	
 	private final String WARNING_NUM = "В поле сумма (руб.) допустимы только цифры!";
-	private final String WARNING_DB_WRITE = "Ошибка записи в базу";
+	private final String WARNING_DB_WRITE = "Ошибка записи в базу";	
 	
 	public PSQLTest() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -71,6 +70,11 @@ public class PSQLTest extends JFrame{
 		spinDate.setBounds(24, 201, 136, 20);
 		getContentPane().add(spinDate);
 		
+		spinIncomeDate = new JSpinner();
+		spinIncomeDate.setModel(new SpinnerDateModel(new Date(), new Date(1560531600000L), new Date(1592154000000L), Calendar.MONTH));
+		spinIncomeDate.setBounds(205, 96, 121, 20);
+		getContentPane().add(spinIncomeDate);
+		
 		txIncome = new JTextField();
 		txIncome.setBounds(205, 32, 86, 20);
 		getContentPane().add(txIncome);
@@ -81,10 +85,7 @@ public class PSQLTest extends JFrame{
 		comboIncomer.setBounds(205, 63, 136, 22);
 		getContentPane().add(comboIncomer);
 		
-		spinIncomeDate = new JSpinner();
-		spinIncomeDate.setModel(new SpinnerDateModel(new Date(1560531600000L), new Date(1560531600000L), new Date(1592154000000L), Calendar.MONTH));
-		spinIncomeDate.setBounds(205, 96, 121, 20);
-		getContentPane().add(spinIncomeDate);
+		
 		
 		JButton btnAddIncome = new JButton("\u0414\u043E\u0431\u0430\u0432\u0438\u0442\u044C \u0434\u043E\u0445\u043E\u0434");
 		btnAddIncome.addActionListener(new ActionListener() {
@@ -137,7 +138,7 @@ public class PSQLTest extends JFrame{
 		label_5.setBounds(182, 197, 96, 14);
 		getContentPane().add(label_5);
 		
-		JLabel lbl10cost = new JLabel("0");
+		lbl10cost = new JLabel("0");
 		lbl10cost.setFont(new Font("Tahoma", Font.BOLD, 11));
 		lbl10cost.setForeground(Color.BLUE);
 		lbl10cost.setBounds(284, 197, 46, 14);
@@ -147,7 +148,7 @@ public class PSQLTest extends JFrame{
 		label_7.setBounds(182, 222, 96, 14);
 		getContentPane().add(label_7);
 		
-		JLabel lblMonthCost = new JLabel("0");
+		lblMonthCost = new JLabel("0");
 		lblMonthCost.setFont(new Font("Tahoma", Font.BOLD, 11));
 		lblMonthCost.setForeground(Color.BLUE);
 		lblMonthCost.setBounds(284, 222, 46, 14);
@@ -164,11 +165,10 @@ public class PSQLTest extends JFrame{
 		textArea = new JTextArea();
 		textArea.setBounds(24, 283, 317, 134);
 		getContentPane().add(textArea);
+
 	}
     
     DBHelper dbhelper;
-    
-    
    
     private JTextField txCost;
     private JComboBox comboType;
@@ -179,6 +179,8 @@ public class PSQLTest extends JFrame{
     private JComboBox comboIncomer;
     private JTextField txItem;
     private JLabel lblTodayCost;
+    private JLabel lbl10cost;
+    JLabel lblMonthCost;
     private JLabel txtStatus;
     private JTextArea textArea;       
     
@@ -186,7 +188,7 @@ public class PSQLTest extends JFrame{
     String recordInfo = "";
     
     public void updateTextArea(String newRec) {
-    	addedTodayLog = addedTodayLog + "\n " + newRec;
+    	addedTodayLog = addedTodayLog + newRec + "\n";
     	textArea.setText(addedTodayLog);    	
     }
     
@@ -197,13 +199,13 @@ public class PSQLTest extends JFrame{
     		return;
     	}
     	
-    	int rub = Integer.valueOf(txIncome.getText());
+    	int rub = this.getIncomeFieldValue();
     	String incomer = (String)comboIncomer.getSelectedItem();
     	Date d = (Date)spinIncomeDate.getValue();
-    	
-    	boolean querySuccess = dbhelper.addIncome(rub, incomer, d);
+    	LocalDate date= d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    	boolean querySuccess = dbhelper.addIncome(rub, incomer, date);
     	if(querySuccess) {
-    		updateTextArea("Учтен доход: " + incomer + " " +  rub + ".rub");
+    		updateTextArea("Учтен доход: " + incomer + " " +  rub + " руб.");
     	} else {
     		updateTextArea(WARNING_DB_WRITE);
     	}
@@ -220,42 +222,50 @@ public class PSQLTest extends JFrame{
     	}
     	
     	String category = (String)comboType.getSelectedItem();
-    	Date d = (Date)spinDate.getValue();    	
+    	Date d = (Date)spinDate.getValue();  
+    	LocalDate date= d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     	int rub = Integer.valueOf(txCost.getText());
     	String item = txItem.getText(); 	
-    	
+    	showLog(date.format(DateTimeFormatter.ISO_LOCAL_DATE));
     	boolean unexpectedCons = chckbxUnexp.isSelected(); 
     	int unexp = unexpectedCons?1:0;
     	
     	
-    	boolean querySuccess = dbhelper.addConsumption(d, item, category, rub, unexp);
+    	boolean querySuccess = dbhelper.addConsumption(date, item, category, rub, unexp);
     	if(querySuccess) {
-    		updateTextArea("Учтен расход: " + item + " " + category + " " +  rub + ".rub");
+    		updateTextArea("Учтен расход: " + item + " " + category + " " +  rub + " руб.");
     	} else {
     		updateTextArea(WARNING_DB_WRITE);
     	}  	    	
     	
     	txItem.setText("");
     	txCost.setText("");
-    	getTodayCost();
-    	
-    	updateTextArea(recordInfo);
+    	getSpendStatistic();
     }
     
-    public void getTodayCost() {    		
-    		String todayCost = dbhelper.getTodayCost();
-    		this.showLog(todayCost);
+    public void getSpendStatistic() {    		
+    		String todayCost = dbhelper.getTodayCost();		
     		lblTodayCost.setText(todayCost); 
+    		
+    		String cost10Days = dbhelper.get10daysCost();
+    		lbl10cost.setText(cost10Days);
+    		
+    		String currentMonthCost = dbhelper.getCurrentMonthCost();
+    		lblMonthCost.setText(currentMonthCost);
     }
-    
-   
+       
     
     public void refreshStatus(String newStatus) {
     	txtStatus.setText(newStatus);
     }
     
+    //for debbug
     public void showLog(String msg) {
     	System.out.println("Log: " + msg);
+    }
+    
+    public int getIncomeFieldValue() {
+    	return Integer.valueOf(txIncome.getText());
     }
     
     
@@ -285,9 +295,12 @@ public class PSQLTest extends JFrame{
     }
 
 	public static void main(String[] args) {
+		
 		PSQLTest t = new PSQLTest();
 		t.setSize(new Dimension(400,500));
 		t.setVisible(true);
-		t.getTodayCost();
+		t.getSpendStatistic();
+		
+		
 	}
 }

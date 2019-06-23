@@ -1,4 +1,4 @@
-package src;
+package ru.porodem.constrack;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -7,10 +7,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-import src.DBScheme2.ConsumptionsTable;
-import src.DBScheme2.IncomeTable;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import ru.porodem.constrack.DBScheme2.ConsumptionsTable;
+import ru.porodem.constrack.DBScheme2.IncomeTable;
 
 public class DBHelper {
 	
@@ -19,7 +22,6 @@ public class DBHelper {
     private final String password = "jkl";
     
     private String status;
-
 	
 	public Connection connect() {
         Connection conn = null;
@@ -46,12 +48,9 @@ public class DBHelper {
         return status;
     }
 	
-	public boolean addIncome(int rub, String incomer, Date d) {
+	public boolean addIncome(int rub, String incomer, LocalDate date) {
 		
 		int rowsInserted = 0;
-		
-		DBHelper dbhelper = this;
-		String date = new SimpleDateFormat("YYYY-MM-dd").format(d);
 		java.sql.Date sqlDate = java.sql.Date.valueOf(date);
 		
 		String SQL = "INSERT INTO " +
@@ -61,7 +60,7 @@ public class DBHelper {
     			IncomeTable.Cols.DATE +
     			" ) values(?,?,?)";
 		
-		try(Connection conn = dbhelper.connect();
+		try(Connection conn = this.connect();
     			PreparedStatement pstmt = conn.prepareStatement(SQL)){
     		pstmt.setInt(1, rub);
     		pstmt.setString(2, incomer);
@@ -77,11 +76,9 @@ public class DBHelper {
 		return (rowsInserted==0 ? false:true);
 	}
 	
-	public boolean addConsumption(Date d, String item, String category, int rub, int unexp) {
+	public boolean addConsumption(LocalDate date, String item, String category, int rub, int unexp) {
 		
 		int rowsInserted = 0;
-		
-		String date = new SimpleDateFormat("YYYY-MM-dd").format(d);
     	java.sql.Date sqlDate = java.sql.Date.valueOf(date);
 		
 		String SQL = "INSERT INTO " +
@@ -105,8 +102,7 @@ public class DBHelper {
     	}
     	catch(SQLException e) {
     		System.out.print("ex:");
-    		System.out.print(e.getMessage());
-    		
+    		System.out.print(e.getMessage());    		
     	}  
     	
     	return (rowsInserted==0 ? false:true);
@@ -115,7 +111,7 @@ public class DBHelper {
 	public String getTodayCost() {
 		String queryResult = "";
 		LocalDate today = LocalDate.now();
-    	java.sql.Date sqlDate = new java.sql.Date(new Date().getTime());
+    	java.sql.Date sqlDate = java.sql.Date.valueOf(today);
     	String SQL = "SELECT SUM(" +
     			ConsumptionsTable.Cols.RUB +
     			") FROM " +
@@ -126,6 +122,69 @@ public class DBHelper {
     	try(Connection conn = this.connect();
     			PreparedStatement pstmt = conn.prepareStatement(SQL)) {    		
     		pstmt.setDate(1, sqlDate);    		
+    		ResultSet rs = pstmt.executeQuery();    		
+    		rs.next();
+    		queryResult = String.valueOf(rs.getInt("sum"));
+    	}
+    	catch(SQLException e) {
+        	System.out.print("ex:");
+        	System.out.print(e.getMessage());	
+        	}  
+    	
+    		return queryResult;
+	}
+	
+	public String get10daysCost() {
+		
+		String queryResult = "";
+		
+		LocalDate today = LocalDate.now();
+    	java.sql.Date sqlDate = java.sql.Date.valueOf(today);
+    	LocalDate tenDaysEarly = today.minusDays(10);
+    	java.sql.Date sqlDate10ago = java.sql.Date.valueOf(tenDaysEarly);
+    	
+    	String SQL = "SELECT SUM(" +
+    			ConsumptionsTable.Cols.RUB +
+    			") FROM " +	ConsumptionsTable.NAME +
+    					" where " +
+    					ConsumptionsTable.Cols.DATE + " between ? and ?";
+    	
+    	try(Connection conn = this.connect();
+    			PreparedStatement pstmt = conn.prepareStatement(SQL)) {    		
+    		pstmt.setDate(1, sqlDate10ago );  
+    		pstmt.setDate(2, sqlDate);    
+    		ResultSet rs = pstmt.executeQuery();    		
+    		rs.next();
+    		queryResult = String.valueOf(rs.getInt("sum"));
+    	}
+    	catch(SQLException e) {
+        	System.out.print("ex:");
+        	System.out.print(e.getMessage());	
+        	}  
+    	
+    		return queryResult;
+	}
+	
+	public String getCurrentMonthCost() {
+		
+		String queryResult = "";
+		LocalDate today = LocalDate.now();
+    	java.sql.Date sqlDate = java.sql.Date.valueOf(LocalDate.now());
+    	LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+    	java.sql.Date sqlDate1 = java.sql.Date.valueOf(firstDayOfMonth);
+    	
+    	String SQL = "SELECT SUM(" +
+    			ConsumptionsTable.Cols.RUB +
+    			") FROM " +
+    			ConsumptionsTable.NAME +
+    					" where " +
+    					ConsumptionsTable.Cols.DATE + 
+    			" between ? and ?";
+    	
+    	try(Connection conn = this.connect();
+    			PreparedStatement pstmt = conn.prepareStatement(SQL)) {    		
+    		pstmt.setDate(1, sqlDate1 );  
+    		pstmt.setDate(2, sqlDate);    
     		ResultSet rs = pstmt.executeQuery();    		
     		rs.next();
     		queryResult = String.valueOf(rs.getInt("sum"));

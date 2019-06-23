@@ -18,3 +18,7 @@ CREATE TABLE public.income
     ddate date NOT NULL,
     CONSTRAINT income_pkey PRIMARY KEY (id)
 )
+
+added converting from java.util.Date to java.time.LocalDate
+
+added statistic for 10 days, month.

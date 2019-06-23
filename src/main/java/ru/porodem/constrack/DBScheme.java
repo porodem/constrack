@@ -1,4 +1,4 @@
-package src;
+package ru.porodem.constrack;
 
 public class DBScheme {
 	public static final class ConsumptionsTable {
