@@ -22,3 +22,5 @@ CREATE TABLE public.income
 added converting from java.util.Date to java.time.LocalDate
 
 added statistic for 10 days, month.
+
+added database.properties with info for DB connection ( Spring )

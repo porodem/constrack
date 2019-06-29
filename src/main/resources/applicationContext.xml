@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <beans  xmlns="http://www.springframework.org/schema/beans"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:context="http://www.springframework.org/schema/context"
@@ -5,13 +6,15 @@
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.springframework.org/schema/context
         http://www.springframework.org/schema/context/spring-context.xsd">
+        
+        <context:property-placeholder location="database.properties"/>
 
-<bean id=testScheme class="ru.porodem.constrack.DBScheme2">
+<bean id="testScheme" class="ru.porodem.constrack.DBScheme2"></bean>
+
+<bean id="beanDBHelper" class="ru.porodem.constrack.DBHelper">
+<property name="url" value="${dbUrl}"/>
+<property name="user" value="${dbUser}"/>
+<property name="pass" value="${dbPass}"/>
 </bean>
-
-<bean id="testBean"
-        class="ru.porodem.springcourse.TestBean">
-        <constructor-arg value="Neil"/>
-    </bean>
 
 </beans>
