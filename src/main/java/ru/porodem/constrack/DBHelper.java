@@ -77,8 +77,9 @@ public class DBHelper {
         return status;
     }
 	
-	public boolean addIncome(int rub, String incomer, LocalDate date) {
+	public String addIncome(int rub, String incomer, LocalDate date) {
 		
+		String result;
 		int rowsInserted = 0;
 		java.sql.Date sqlDate = java.sql.Date.valueOf(date);
 		
@@ -101,7 +102,13 @@ public class DBHelper {
     		System.out.print(e.getMessage());
     	} 
 		
-		return (rowsInserted==0 ? false:true);
+		if(rowsInserted>0) {
+			result = "Учтен доход: (" + incomer + ") " +  rub + " руб.";
+    	} else {
+    		result = PSQLTest.WARNING_DB_WRITE;
+    	}
+		
+		return result;
 	}
 	
 	public String addConsumption(LocalDate date, String item, String category, int rub, int unexp) {
@@ -142,10 +149,10 @@ public class DBHelper {
     	return result;
 	}
 	
-	public String getTodayCost() {
+	public String getTodayCost(LocalDate d) {
 		
 		String queryResult = "";
-    	java.sql.Date sqlDate = java.sql.Date.valueOf(LocalDate.now());
+    	java.sql.Date sqlDate = java.sql.Date.valueOf(d);
     	
     	String SQL = "SELECT SUM(" +
     			ConsumptionsTable.Cols.RUB +
@@ -267,12 +274,16 @@ public String getMonthMoneyLeft() {
 	}
 
 //непредвиденные расходы
-	public String getUnexpSpends() {
+	public String getUnexpSpends(Month month) {
 		
 		String queryResult = "";
-		Date sqlDateStart = Date.valueOf(firstDayOfMonth);
-		LocalDate lastDayOfMonth = today.withDayOfMonth(today.lengthOfMonth());
-		Date sqlDateEnd = Date.valueOf(lastDayOfMonth);
+		//Date sqlDateStart = Date.valueOf(firstDayOfMonth);
+		//LocalDate lastDayOfMonth = today.withDayOfMonth(today.lengthOfMonth());
+		//Date sqlDateEnd = Date.valueOf(lastDayOfMonth);
+		LocalDate  date1= today.withMonth(month.getValue()).withDayOfMonth(1);
+		Date sqlDateStart = Date.valueOf(today.withMonth(month.getValue()).withDayOfMonth(1));
+		int monthLength = date1.lengthOfMonth();
+		Date sqlDateEnd = Date.valueOf(date1.withDayOfMonth(monthLength));
 		
 		String SQL = "SELECT " +
 				ConsumptionsTable.Cols.DATE + ", " +
@@ -304,6 +315,49 @@ public String getMonthMoneyLeft() {
 	    	}  
 		
 			return queryResult;
+	}
+	
+	
+public String getMonthByCategory(Month month, int rubLimit) {
+		
+		String queryResult = "";
+		int total = 0;
+		
+		LocalDate  date1= today.withMonth(month.getValue()).withDayOfMonth(1);
+		Date sqlDateStart = Date.valueOf(today.withMonth(month.getValue()).withDayOfMonth(1));
+		int monthLength = date1.lengthOfMonth();
+		Date sqlDateEnd = Date.valueOf(date1.withDayOfMonth(monthLength));
+		
+		String SQL = "SELECT " +
+				ConsumptionsTable.Cols.CATEGORY + ", " +
+				" SUM(" + ConsumptionsTable.Cols.RUB + ") AS rub" +
+				" FROM " +
+				ConsumptionsTable.NAME +
+						" where " +
+						ConsumptionsTable.Cols.RUB + " > "+ rubLimit +
+						" AND " + ConsumptionsTable.Cols.DATE + " between ? and ?"
+								+ " GROUP BY " + ConsumptionsTable.Cols.CATEGORY;
+		
+		try(Connection conn = this.connect();
+				PreparedStatement pstmt = conn.prepareStatement(SQL)) {    		
+			pstmt.setDate(1, sqlDateStart );  
+			pstmt.setDate(2, sqlDateEnd);    
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()) {
+				int i = rs.getInt(ConsumptionsTable.Cols.RUB);
+				queryResult = queryResult + "\n" + String.format("%s %d",
+    					rs.getString(ConsumptionsTable.Cols.CATEGORY),
+    					i) + " руб. ";
+				System.out.println(queryResult);
+				total += i;
+				i = 0;
+    		}
+		}
+		catch(SQLException e) {
+	    	System.out.print(e.getMessage());	
+	    	}  
+		
+		return queryResult + "\n\t ИТОГО: " + total;
 	}
 	
 	//запрос на крупные покупки 
@@ -352,35 +406,90 @@ public String getMonthMoneyLeft() {
 		return queryResult + "\n ИТОГО: " + total;
 	}
 	
-	//TO DO fix for propriate result
-	 public String getFood(String pattern, int cost) {
-		 
-		 	String result = "";
-		 
-	    	String SQL = "SELECT * FROM " +
-	    			ConsumptionsTable.NAME +
-	    					" where RUB > ? and ITEM = ?";
-	    	try(Connection conn = this.connect();
-	    			PreparedStatement pstmt = conn.prepareStatement(SQL)) {
-	    		
-	    		pstmt.setInt(1, cost);
-	    		pstmt.setString(2, pattern);
-	    		
-	    		ResultSet rs = pstmt.executeQuery();
-	    		
-	    		while(rs.next()) {
-	    			System.out.println(String.format("%s %d",
-	    					rs.getString("item"),
-	    					rs.getInt("rub")));
+	public String getIncome(Month month, int rubLimit) {
+			
+			String queryResult = "";
+			int total = 0;
+			
+			//get array of two(2) sqlDate for use in query
+			Date[] dates = this.get2Dates(month);
+			
+			String SQL = "SELECT " +
+					IncomeTable.Cols.DATE + ", " +
+					IncomeTable.Cols.INCOMER + ", " +
+					IncomeTable.Cols.RUB  +
+					" FROM " +
+					IncomeTable.NAME +
+							" WHERE " +
+					IncomeTable.Cols.DATE + " between ? and ?";
+			
+			try(Connection conn = this.connect();
+					PreparedStatement pstmt = conn.prepareStatement(SQL)) {    		
+				pstmt.setDate(1, dates[0]);  
+				pstmt.setDate(2, dates[1]);    
+				ResultSet rs = pstmt.executeQuery();
+				while(rs.next()) {
+					int i = rs.getInt(IncomeTable.Cols.RUB);
+					queryResult = queryResult + "\n" + String.format("%s %s %d",
+							rs.getDate(IncomeTable.Cols.DATE),
+	    					rs.getString(IncomeTable.Cols.INCOMER),
+	    					i) + " руб. ";
+					System.out.println(queryResult);
+					total += i;
+					i = 0;
 	    		}
-	    		
-	    	} catch(SQLException e) {
-	    		System.out.print("ex:");
-	    		System.out.print(e.getMessage());
-	    	}  	 
-	    	
-	    	return "some string";
-	    }
+			}
+			catch(SQLException e) {
+		    	System.out.print(e.getMessage());	
+		    	}  
+			
+			return queryResult + "\n ИТОГО: " + total;
+		}
+	
+	public String getMonthsDifference() {
+		
+		String queryResult = "";
+		int total = 0;
+		
+		String SQL = "with tcons as (select \r\n" + 
+				"to_char(to_timestamp ((extract(month from buy_date)::text), 'MM'), 'TMmon') date,\r\n" + 
+				"sum(cons.rub)\r\n" + 
+				"from consumptions cons GROUP BY date)\r\n" + 
+				"SELECT \r\n" + 
+				"tinc.date AS inc_date,\r\n" + 
+				"tinc.sum AS inc_sum,\r\n" + 
+				"tcons.date AS cons_date,\r\n" + 
+				"tcons.sum AS cons_sum, (tinc.sum - tcons.sum) as month_diff  FROM (\r\n" + 
+				"SELECT \r\n" + 
+				"to_char(to_timestamp ((extract(month from ddate)::text), 'MM'), 'TMmon') date,\r\n" + 
+				"sum(inc.rub)\r\n" + 
+				"FROM income inc GROUP BY date) as tinc\r\n" + 
+				"LEFT JOIN tcons on tcons.date = tinc.date";
+		
+		try(Connection conn = this.connect();
+				PreparedStatement pstmt = conn.prepareStatement(SQL)) {      
+			ResultSet rs = pstmt.executeQuery();
+			while(rs.next()) {
+				//int i = rs.getInt("month_diff");
+				queryResult = queryResult + "\n" + String.format("%s %d %s %d %d",
+						rs.getString("inc_date"),
+    					rs.getInt("inc_sum"),
+    					rs.getString("cons_date"),
+    					rs.getInt("cons_sum"),
+    					rs.getInt("month_diff")
+    					) + " руб. ";
+				System.out.println(queryResult);
+				//total += i;
+				//i = 0;
+    		}
+		}
+		catch(SQLException e) {
+	    	System.out.print(e.getMessage());	
+	    	}  
+		
+		return queryResult ;
+		
+	}
 	
 	public void execQuery(PreparedStatement s) {
 		
@@ -394,6 +503,20 @@ public String getMonthMoneyLeft() {
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+	
+	//get start and end sqlDate for querymonth
+	private Date[] get2Dates(Month month) {
+		
+		Date[] sqlDates = new Date[2];
+		LocalDate  date1= today.withMonth(month.getValue()).withDayOfMonth(1);
+		Date sqlDateStart = Date.valueOf(today.withMonth(month.getValue()).withDayOfMonth(1));
+		sqlDates[0] = sqlDateStart;
+		int monthLength = date1.lengthOfMonth();
+		Date sqlDateEnd = Date.valueOf(date1.withDayOfMonth(monthLength));
+		sqlDates[1] = sqlDateEnd;
+		
+		return sqlDates;
 	}
 	
 	//check if user input only numbers for RUB value

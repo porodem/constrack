@@ -50,6 +50,15 @@ public class PSQLTest extends JFrame implements ItemListener{
 	private final String WARNING_NUM = "В поле сумма (руб.) допустимы только цифры!";
 	public static final String WARNING_DB_WRITE = "Ошибка записи в базу";	
 	private final String ERROR_DB_CONNECTION = "Ошибка подключения к базе";	
+	
+	private static final int BTN_IN_USE_EXPENSIVE = 1;
+	private static final int BTN_IN_USE_CATEGORY = 2;
+	private static final int BTN_IN_USE_INCOME = 3;
+	private static final int BTN_IN_USE_UNEXPECTED = 4;
+	
+	private int btnInUse = 0;
+	
+	
 	private String rubInputType = "";
 	
 	Month queryMonth;
@@ -87,9 +96,11 @@ public class PSQLTest extends JFrame implements ItemListener{
 				queryMonth =  LocalDate.now().getMonth();
 				cleanTextArea();
 				btnShowExpensive.setText(">1000");
+				btnShowIncomes.setText("Доходы");
+				btnShowCategMnth.setText("по категориям");
 			}
 		});
-		btnResetReports.setBounds(273, 139, 89, 23);
+		btnResetReports.setBounds(295, 188, 120, 23);
 		getContentPane().add(btnResetReports);
 		
 		comboType = new JComboBox();
@@ -130,32 +141,32 @@ public class PSQLTest extends JFrame implements ItemListener{
 		getContentPane().add(label);
 		
 		JLabel label_3 = new JLabel("сегодня");
-		label_3.setBounds(178, 161, 52, 14);
+		label_3.setBounds(180, 140, 52, 14);
 		getContentPane().add(label_3);
 		lblTodayCost = new JLabel("0");
 		lblTodayCost.setFont(new Font("Tahoma", Font.BOLD, 11));
 		lblTodayCost.setForeground(Color.BLACK);
-		lblTodayCost.setBounds(235, 162, 45, 14);
+		lblTodayCost.setBounds(241, 139, 45, 14);
 		getContentPane().add(lblTodayCost);
 		
 		JLabel label_5 = new JLabel("10 дней");
-		label_5.setBounds(178, 184, 46, 14);
+		label_5.setBounds(180, 184, 46, 14);
 		getContentPane().add(label_5);
 		
 		lbl10cost = new JLabel("0");
 		lbl10cost.setFont(new Font("Tahoma", Font.BOLD, 11));
 		lbl10cost.setForeground(Color.BLUE);
-		lbl10cost.setBounds(235, 184, 46, 14);
+		lbl10cost.setBounds(240, 183, 46, 14);
 		getContentPane().add(lbl10cost);
 		
 		JLabel label_7 = new JLabel("месяц");
-		label_7.setBounds(178, 207, 46, 14);
+		label_7.setBounds(180, 207, 46, 14);
 		getContentPane().add(label_7);
 		
 		lblMonthCost = new JLabel("0");
 		lblMonthCost.setFont(new Font("Tahoma", Font.BOLD, 11));
 		lblMonthCost.setForeground(Color.BLUE);
-		lblMonthCost.setBounds(235, 207, 46, 14);
+		lblMonthCost.setBounds(240, 206, 46, 14);
 		getContentPane().add(lblMonthCost);
 		
 		txtStatus = new JLabel("porodem@gmail.com");
@@ -181,19 +192,19 @@ public class PSQLTest extends JFrame implements ItemListener{
 		textArea = new JTextArea();
 		textArea.setLineWrap(true);
 		textArea.setDropMode(DropMode.INSERT);
-		textArea.setBounds(10, 266, 365, 249);
+		textArea.setBounds(10, 277, 365, 238);
 		getContentPane().add(textArea);
 		
 		JLabel label_4 = new JLabel("Осталось");
-		label_4.setBounds(178, 230, 48, 14);
+		label_4.setBounds(180, 230, 57, 14);
 		getContentPane().add(label_4);
 		
 		lblMoneyLeft = new JLabel("0");
-		lblMoneyLeft.setBounds(236, 230, 46, 14);
+		lblMoneyLeft.setBounds(241, 229, 46, 14);
 		getContentPane().add(lblMoneyLeft);
 		
-		JButton btnShowUnexp = new JButton("непредвиденное");
-		btnShowUnexp.setBounds(227, 35, 136, 23);
+		btnShowUnexp = new JButton("непредвиденное");
+		btnShowUnexp.setBounds(295, 36, 120, 23);
 		btnShowUnexp.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showUnexpSpends();
@@ -202,7 +213,7 @@ public class PSQLTest extends JFrame implements ItemListener{
 		getContentPane().add(btnShowUnexp);
 		
 		btnShowExpensive = new JButton(">1000");
-		btnShowExpensive.setBounds(227, 60, 136, 23);
+		btnShowExpensive.setBounds(295, 60, 120, 23);
 		btnShowExpensive.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				showExpensive();
@@ -210,18 +221,42 @@ public class PSQLTest extends JFrame implements ItemListener{
 		});
 		getContentPane().add(btnShowExpensive);
 		
-		JButton btnShowIncomes = new JButton("Доходы");
-		btnShowIncomes.setBounds(227, 112, 136, 23);
+		btnShowCategMnth = new JButton("по категориям");
+		btnShowCategMnth.setBounds(295, 135, 120, 23);
+		btnShowCategMnth.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showMonthByCat();
+			}
+		});
+		getContentPane().add(btnShowCategMnth);
+		
+		btnShowIncomes = new JButton("Доходы");
+		btnShowIncomes.addActionListener(new ActionListener( ) {
+			public void actionPerformed(ActionEvent e) {
+				showIncome();
+			}
+		});
+		btnShowIncomes.setBounds(295, 110, 120, 23);
 		getContentPane().add(btnShowIncomes);
 		
+		btnDiff = new JButton("сравнение");
+		btnDiff.setBounds(295, 161, 120, 23);
+		btnDiff.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				showDifference();
+			}
+		});
+		getContentPane().add(btnDiff);
+		
 		JButton btnShowPrevMonths = new JButton("расх. прошл. мес");
-		btnShowPrevMonths.setBounds(227, 85, 136, 23);
+		btnShowPrevMonths.setBounds(295, 85, 120, 23);
 		getContentPane().add(btnShowPrevMonths);
 		
 		radioCost = new JRadioButton("расход");
 		radioCost.setBounds(24, 10, 70, 23);
 		radioCost.addItemListener(this);
 		radioCost.setEnabled(true);
+		radioCost.setSelected(true);
 		getContentPane().add(radioCost);
 		
 		radioIncome = new JRadioButton("доход");
@@ -243,8 +278,26 @@ public class PSQLTest extends JFrame implements ItemListener{
 		btnGroup.add(radioQuery);
 		
 		label_2 = new JLabel("ОТЧЕТЫ");
-		label_2.setBounds(269, 14, 60, 14);
+		label_2.setBounds(296, 14, 60, 14);
 		getContentPane().add(label_2);		
+		
+		JLabel label_6 = new JLabel("вчера");
+		label_6.setBounds(180, 163, 46, 14);
+		getContentPane().add(label_6);
+		
+		lblYesterday = new JLabel("0");
+		lblYesterday.setBounds(241, 161, 46, 14);
+		getContentPane().add(lblYesterday);
+		
+		JLabel label_8 = new JLabel("прш. мес");
+		label_8.setBounds(181, 250, 55, 14);
+		getContentPane().add(label_8);
+		
+		JLabel lblPrevMonth = new JLabel("0");
+		lblPrevMonth.setBounds(240, 249, 46, 14);
+		getContentPane().add(lblPrevMonth);
+		
+		
 		
 		queryMonth = LocalDate.now().getMonth();
 
@@ -255,6 +308,10 @@ public class PSQLTest extends JFrame implements ItemListener{
     DBHelper dbhelper;
    
     private JButton btnShowExpensive;
+    private JButton btnShowUnexp;
+    private JButton btnShowIncomes;
+    private JButton btnShowCategMnth;
+    private JButton btnDiff;
     
     private JTextField txSum;
     private JComboBox comboType;
@@ -263,6 +320,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     private JComboBox comboIncomer;
     private JTextField txItem;
     private JLabel lblTodayCost;
+    private JLabel lblYesterday;
     private JLabel lbl10cost;
     private JLabel lblMonthCost;
     private JLabel lblMoneyLeft;
@@ -299,13 +357,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     	String incomer = (String)comboIncomer.getSelectedItem();
     	Date d = (Date)spinDate.getValue();
     	LocalDate date= d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-    	boolean querySuccess = dbhelper.addIncome(rub, incomer, date);
+    	String querySuccess = dbhelper.addIncome(rub, incomer, date);
     	
-    	if(querySuccess) {
-    		updateTextArea("Учтен доход: (" + incomer + ") " +  rub + " руб.");
-    	} else {
-    		updateTextArea(WARNING_DB_WRITE);
-    	}
+    	updateTextArea(querySuccess);
     	
     	txItem.setText("");
     	txSum.setText("");
@@ -320,28 +374,47 @@ public class PSQLTest extends JFrame implements ItemListener{
     	
     	String category = (String)comboType.getSelectedItem();
     	Date d = (Date)spinDate.getValue();  
-    	LocalDate date= d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+    	LocalDate date = d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
     	int rub = Integer.valueOf(txSum.getText());
     	String item = txItem.getText(); 	
-    	showLog(date.format(DateTimeFormatter.ISO_LOCAL_DATE));
     	boolean unexpectedCons = chckbxUnexp.isSelected(); 
     	int unexp = unexpectedCons?1:0;    	
     	
     	String queryResult = dbhelper.addConsumption(date, item, category, rub, unexp);
-    	updateTextArea(queryResult);  	    	
     	
+    	updateTextArea(queryResult);    	
     	txItem.setText("");
     	txSum.setText("");
     	getSpendStatistic();
     }
     
-    public void showUnexpSpends() {
-    	String unexpSpendMonth = dbhelper.getUnexpSpends();
-    	updateTextArea("Непердвиденные расходы\n");
-    	updateTextArea(unexpSpendMonth);
+    public void showUnexpSpends() {  
+    	
+    	if(btnInUse != BTN_IN_USE_UNEXPECTED) {
+        	btnInUse = BTN_IN_USE_UNEXPECTED;
+        	queryMonth = LocalDate.now().getMonth();
+			btnShowCategMnth.setText("по категориям");
+			btnShowIncomes.setText("доходы");
+			btnShowExpensive.setText("> 1000");
+    	}
+    	
+    	String unexpSpendMonth = dbhelper.getUnexpSpends(queryMonth);
+    	String monthString = queryMonth.getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, new java.util.Locale("ru", "RU"));
+    	updateTextArea("Непердвиденные расходы за " + queryMonth + "\n");
+    	updateTextArea(unexpSpendMonth);  
+    	btnShowUnexp.setText(monthString);
+    	queryMonth = queryMonth.minus(1);
     }
     
     public void showExpensive() {
+    	
+    	//check which button was used last time, it other then reset month to current month
+    	if(btnInUse != BTN_IN_USE_EXPENSIVE) {
+        	btnInUse = BTN_IN_USE_EXPENSIVE;
+        	queryMonth = LocalDate.now().getMonth();
+			btnShowCategMnth.setText("по категориям");
+			btnShowIncomes.setText("доходы");
+    	}
     	
     	int rubSum = 0;
     	
@@ -353,19 +426,69 @@ public class PSQLTest extends JFrame implements ItemListener{
     	} 	   	
     	
     	String expeniveList = dbhelper.getExpensive(queryMonth, rubSum);
-    	String monthString = queryMonth.getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, new java.util.Locale("Cyrylic", "Cyrylic"));
+    	String monthString = queryMonth.getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, new java.util.Locale("ru", "RU"));
     	cleanTextArea();
     	
-    	updateTextArea("\n" + "расходы больше " + rubSum + " за месяц " +  monthString +"\n");
+    	updateTextArea("\n" + "расходы " + monthString +  " больше " + rubSum + "\n");
     	updateTextArea(expeniveList);
     	queryMonth = queryMonth.minus(1);
     	this.showLog(queryMonth.toString());
     	btnShowExpensive.setText(monthString + " > " + rubSum );
     }
     
+    private void showMonthByCat() {
+    	
+    	if(btnInUse != BTN_IN_USE_CATEGORY) {
+        	btnInUse = BTN_IN_USE_CATEGORY;
+        	queryMonth = LocalDate.now().getMonth();
+        	btnShowExpensive.setText(">1000");
+        	btnShowIncomes.setText("доходы");
+    	}
+    	
+    	String result = dbhelper.getMonthByCategory(queryMonth, 1);
+    	String monthString = queryMonth.getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, new java.util.Locale("ru", "RU"));
+    	cleanTextArea();
+    	
+    	updateTextArea("\n" + "расходы " + monthString + " по категориям\n");
+    	updateTextArea(result);
+    	queryMonth = queryMonth.minus(1);
+    	this.showLog(queryMonth.toString());
+    	btnShowCategMnth.setText(monthString );
+    }
+    
+    private void showIncome() {
+    	
+    	if(btnInUse != BTN_IN_USE_INCOME) {
+        	btnInUse = BTN_IN_USE_INCOME;
+        	queryMonth = LocalDate.now().getMonth();
+        	btnShowExpensive.setText(">1000");
+        	btnShowCategMnth.setText("по категориям");
+    	}
+    	
+    	String result = dbhelper.getIncome(queryMonth, 1);
+    	
+    	String monthString = queryMonth.getDisplayName(java.time.format.TextStyle.FULL, new java.util.Locale("ru", "RU"));
+    	cleanTextArea();
+    	
+    	updateTextArea("\n" + "доходы " +  monthString +"\n");
+    	updateTextArea(result);
+    	queryMonth = queryMonth.minus(1);
+    	this.showLog(queryMonth.toString() + " " + monthString);
+    	btnShowIncomes.setText(monthString );
+    }
+    
+    private void showDifference() {
+    	String result = dbhelper.getMonthsDifference();
+    	updateTextArea(result);
+    }
+    
     public void getSpendStatistic() {    		
-    		String todayCost = dbhelper.getTodayCost();		
+    		String todayCost = dbhelper.getTodayCost(LocalDate.now());		
     		lblTodayCost.setText(todayCost); 
+    		
+    		String yesterdayCost = dbhelper.getTodayCost(LocalDate.now().minusDays(1));
+    		System.out.println(yesterdayCost);
+    		lblYesterday.setText(yesterdayCost); 
     		
     		String cost10Days = dbhelper.get10daysCost();
     		lbl10cost.setText(cost10Days);
@@ -375,10 +498,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     		
     		String moneyLeft = dbhelper.getMonthMoneyLeft();
     		lblMoneyLeft.setText(moneyLeft);
-    }
-      
-    
-    
+    } 
     
     public void refreshStatus(String newStatus) {
     	txtStatus.setText(newStatus);
@@ -422,7 +542,7 @@ public class PSQLTest extends JFrame implements ItemListener{
 	public static void main(String[] args) {
 		
 		PSQLTest t = new PSQLTest();
-		t.setSize(new Dimension(400,590));
+		t.setSize(new Dimension(440,590));
 		t.setVisible(true);
 		t.getSpendStatistic();
 		
@@ -448,7 +568,7 @@ public class PSQLTest extends JFrame implements ItemListener{
 		
 	}
 	
-	//set access for right elements
+	//set access for right elements (disable or enable) on radio change
 	private void isRadioCost(boolean isCost, boolean isQuery) {		
 		boolean b = isQuery?isCost:!isCost;
 		comboIncomer.setEnabled(b);
