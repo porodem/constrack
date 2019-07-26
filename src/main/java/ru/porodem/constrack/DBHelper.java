@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
+import java.util.TimeZone;
 
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -17,7 +18,9 @@ import ru.porodem.constrack.DBScheme2.ConsumptionsTable;
 import ru.porodem.constrack.DBScheme2.IncomeTable;
 
 
-/**@author Dolgopolov Anatoliy */
+/**@author Dolgopolov Anatoliy
+ * Создает подключение к БД.
+ * Содержит методы с закардхожеными запросами к БД */
 public class DBHelper {
 	
 	/* implemented with applicationContext.xml
@@ -25,6 +28,13 @@ public class DBHelper {
     private final String user = "postgres";
     private final String password = "jkl";
     */
+	
+	//тестовые параменты для подключения к удаленной БД на хостинге
+	//TODO найти альтернативное решение не используя эту длинную строку 
+	//которая решает проблему The server time zone value 'MSK' is unrecognized or represents...
+	String mysqlUrl = "jdbc:mysql://server80.hosting.reg.ru:3306/u8438415_constrack?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+	String mysqlUser = "u8438415_user";
+	String mysqlPass = "Par14400";
 	
 	private String url;
 	private String user;
@@ -64,7 +74,7 @@ public class DBHelper {
         return conn;
     }
 	
-	public boolean isConnectOk() {
+	public boolean isConnectOkOriginal() {
 		boolean status = false;
         Connection conn = null;
         try {
@@ -72,6 +82,22 @@ public class DBHelper {
             status = true;
         } catch (SQLException e) {
             System.out.println(e.getMessage());
+        }
+ 
+        return status;
+    }
+	
+	public boolean isConnectOk() {
+		boolean status = false;
+        Connection conn = null;
+        try {
+        	//test solution for connection error to reg.ru (don't works) maby can be fixed
+        	//TimeZone timeZone = TimeZone.getTimeZone("MSK");
+            //TimeZone.setDefault(timeZone);
+            conn = DriverManager.getConnection(mysqlUrl, mysqlUser, mysqlPass);
+            status = true;
+        } catch (SQLException e) {
+            System.out.println("checkStatus: " + e.getMessage());
         }
  
         return status;

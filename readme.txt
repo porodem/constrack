@@ -42,3 +42,5 @@ added database.properties with info for DB connection ( Spring )
  дата в месяц текстом https://stackoverflow.com/questions/9094392/get-month-name-from-number-in-postgresql
  
  дублирующийся код по вычислению начальной и конечной даты sql.Date для использования в запросе - теперь вынесен в метод private Date[] get2Dates(Month month)
+ 
+ 24.07 Пробую настроить подключение к MySQL на хостинге reg.ru
