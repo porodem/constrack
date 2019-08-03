@@ -1,4 +1,9 @@
+03.08.19 Класс DBHelper теперь создается с помощью Spring используя аннотацию @Component
+-проблема с кодировкой при отображении на сервере БД
+-(после перехода на mySQL) ошибка получения поля sum из запросов с помощью JDBC, решилась назначением явного псевдонима для возвращаемого поля sum
+-добавлена документация для класса DBHelper
 
+******
 Описание таблиц
 
 create table consumptions(
@@ -12,11 +17,10 @@ is_unexp int CHECK(is_unexp IN (0,1))
 
 CREATE TABLE public.income
 (
-    id integer NOT NULL DEFAULT nextval('income_id_seq'::regclass),
+    id integer NOT NULL PRIMARY KEY
     rub integer NOT NULL,
-    incomer character(40) COLLATE pg_catalog."default",
-    ddate date NOT NULL,
-    CONSTRAINT income_pkey PRIMARY KEY (id)
+    incomer character(40) 
+    ddate date NOT NULL,	
 )
 
 added converting from java.util.Date to java.time.LocalDate

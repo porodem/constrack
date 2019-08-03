@@ -8,13 +8,16 @@
         http://www.springframework.org/schema/context/spring-context.xsd">
         
         <context:property-placeholder location="database.properties"/>
+        <context:component-scan base-package="ru.porodem.constrack"/>
 
 <bean id="testScheme" class="ru.porodem.constrack.DBScheme2"></bean>
 
+
+<!-- now this bean creates using annotation @Component
 <bean id="beanDBHelper" class="ru.porodem.constrack.DBHelper">
 <property name="url" value="${dbUrl}"/>
 <property name="user" value="${dbUser}"/>
 <property name="pass" value="${dbPass}"/>
-</bean>
+</bean> -->
 
 </beans>

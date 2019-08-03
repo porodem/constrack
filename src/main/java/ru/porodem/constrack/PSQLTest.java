@@ -181,6 +181,8 @@ public class PSQLTest extends JFrame implements ItemListener{
 		//dbhelper = new DBHelper();
 		dbhelper = context.getBean("beanDBHelper",DBHelper.class);
 		
+		// CHECK CONNECTION TO REMOTE DB
+		//
 		if(dbhelper.isConnectOk()?true:false) {
 			txtStatus.setText("connected");
 			txtStatus.setForeground(Color.GREEN);
@@ -465,7 +467,7 @@ public class PSQLTest extends JFrame implements ItemListener{
         	btnShowCategMnth.setText("по категориям");
     	}
     	
-    	String result = dbhelper.getIncome(queryMonth, 1);
+    	String result = dbhelper.getIncome(queryMonth);
     	
     	String monthString = queryMonth.getDisplayName(java.time.format.TextStyle.FULL, new java.util.Locale("ru", "RU"));
     	cleanTextArea();

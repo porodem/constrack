@@ -11,34 +11,28 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
+import java.util.Properties;
 
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.stereotype.Component;
 
-import ru.porodem.constrack.DBScheme2.ConsumptionsTable;
-import ru.porodem.constrack.DBScheme2.IncomeTable;
+import ru.porodem.constrack.DBScheme.ConsumptionsTable;
+import ru.porodem.constrack.DBScheme.IncomeTable;
 
 
-/**@author Dolgopolov Anatoliy
- * Создает подключение к БД.
- * Содержит методы с закардхожеными запросами к БД */
+/**Создает подключение к БД.
+ *Содержит методы с закардхожеными запросами к БД 
+ * @author Dolgopolov Anatoliy
+ * */
+@Component("beanDBHelper")
 public class DBHelper {
-	
-	/* implemented with applicationContext.xml
-	private final String url = "jdbc:postgresql://localhost/demo";
-    private final String user = "postgres";
-    private final String password = "jkl";
-    */
 	
 	//тестовые параменты для подключения к удаленной БД на хостинге
 	//TODO найти альтернативное решение не используя эту длинную строку 
 	//которая решает проблему The server time zone value 'MSK' is unrecognized or represents...
-	String mysqlUrl = "jdbc:mysql://server80.hosting.reg.ru:3306/u8438415_constrack?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
-	String mysqlUser = "u8438415_user";
-	String mysqlPass = "Par14400";
-	
-	private String url;
-	private String user;
-	private String password;
+	private final String url = "jdbc:mysql://server80.hosting.reg.ru:3306/u8438415_constrack?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+	private final String user = "u8438415_user";
+	private final String password = "Par14400";
 	
     private String status;
     
@@ -49,42 +43,22 @@ public class DBHelper {
     	today = LocalDate.now();
     	firstDayOfMonth = today.withDayOfMonth(1);
     }
-    
-    public void setUrl(String dbUrl) {
-    	url = dbUrl;
-    }
-    
-    public void setUser(String user) {
-    	this.user = user;
-    }
-    
-    public void setPass(String pass) {
-    	password = pass;
-    }
 	
 	public Connection connect() {
         Connection conn = null;
+        Properties properties = new Properties();
+        properties.setProperty("user", "u8438415_user");
+        properties.setProperty("password", "Par14400");
+        properties.setProperty("useUnicode", "true");
+        properties.setProperty("characterEncoding", "utf8");	//or we'll see only ??? instead cyrillic symbols in remote DB mySQL
         try {
-            conn = DriverManager.getConnection(url, user, password);
+            conn = DriverManager.getConnection(url, properties);
             setStatus("connected");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
  
         return conn;
-    }
-	
-	public boolean isConnectOkOriginal() {
-		boolean status = false;
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(url, user, password);
-            status = true;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
- 
-        return status;
     }
 	
 	public boolean isConnectOk() {
@@ -94,7 +68,7 @@ public class DBHelper {
         	//test solution for connection error to reg.ru (don't works) maby can be fixed
         	//TimeZone timeZone = TimeZone.getTimeZone("MSK");
             //TimeZone.setDefault(timeZone);
-            conn = DriverManager.getConnection(mysqlUrl, mysqlUser, mysqlPass);
+            conn = DriverManager.getConnection(url, user, password);
             status = true;
         } catch (SQLException e) {
             System.out.println("checkStatus: " + e.getMessage());
@@ -103,6 +77,11 @@ public class DBHelper {
         return status;
     }
 	
+	/**
+	 * Добавляет в БД запись о доходе
+	 * @param incomer источник дохода
+	 * @return строка с информацией о добавленной в БД записи или с ошибкой
+	 */
 	public String addIncome(int rub, String incomer, LocalDate date) {
 		
 		String result;
@@ -137,6 +116,10 @@ public class DBHelper {
 		return result;
 	}
 	
+	/**
+	 * Добавляет запись о расходе
+	 * @return строку с результатом добавления или ошибкой
+	 */
 	public String addConsumption(LocalDate date, String item, String category, int rub, int unexp) {
 		
 		String result;
@@ -175,6 +158,9 @@ public class DBHelper {
     	return result;
 	}
 	
+	/**
+	 * Получает сумму расходов за текущий день
+	 */
 	public String getTodayCost(LocalDate d) {
 		
 		String queryResult = "";
@@ -182,7 +168,7 @@ public class DBHelper {
     	
     	String SQL = "SELECT SUM(" +
     			ConsumptionsTable.Cols.RUB +
-    			") FROM " +
+    			") AS SUM FROM " +
     			ConsumptionsTable.NAME +
     					" where " +
     					ConsumptionsTable.Cols.DATE + " = ?";
@@ -195,12 +181,15 @@ public class DBHelper {
     		queryResult = String.valueOf(rs.getInt("sum"));
     	}
     	catch(SQLException e) {
-        	System.out.print(e.getMessage());	
+        	System.out.print("getTodayCost error: " + e.getMessage());	
         	}  
     	
     		return queryResult;
 	}
 	
+	/**
+	 * получить сумму расходов за последние 10 дней
+	 */
 	public String get10daysCost() {
 		
 		String queryResult = "";
@@ -211,7 +200,7 @@ public class DBHelper {
     	
     	String SQL = "SELECT SUM(" +
     			ConsumptionsTable.Cols.RUB +
-    			") FROM " +	ConsumptionsTable.NAME +
+    			") AS SUM FROM " +	ConsumptionsTable.NAME + //without alias 'sum' there was an error "column 'sum' not found" (with local postgresql it was OK)
     					" where " +
     					ConsumptionsTable.Cols.DATE + " between ? and ?";
     	
@@ -231,6 +220,9 @@ public class DBHelper {
     		return queryResult;
 	}
 	
+	/**
+	 * Возвращает строку с суммой расходов за текущий месяц
+	 */
 	public String getCurrentMonthCost() {
 		
 		String queryResult = "";
@@ -239,7 +231,7 @@ public class DBHelper {
     	
     	String SQL = "SELECT SUM(" +
     			ConsumptionsTable.Cols.RUB +
-    			") FROM " +
+    			") AS SUM FROM " +
     			ConsumptionsTable.NAME +
     					" where " +
     					ConsumptionsTable.Cols.DATE + 
@@ -260,7 +252,11 @@ public class DBHelper {
     		return queryResult;
 	}
 	
-public String getMonthMoneyLeft() {
+		/**
+		 * Сколько средств осталось на этот месяц. Это разница между доходами прошлого месяца и суммой расходов за текущий месяц.
+		 * @return Строка. Количество средств доступных для трат в текущем месяце. 
+		 */
+		public String getMonthMoneyLeft() {
 		
 		String queryResult = "";
 		int currentMonthLength = today.lengthOfMonth();
@@ -299,8 +295,13 @@ public String getMonthMoneyLeft() {
     		return queryResult;
 	}
 
-//непредвиденные расходы
-	public String getUnexpSpends(Month month) {
+
+		/**
+		 * Непредвиденные расходы
+		 * @param month расчетный месяц
+		 * @return возвращает строку со списком непредвиденных покупок за текущий месяц
+		 */
+		public String getUnexpSpends(Month month) {
 		
 		String queryResult = "";
 		//Date sqlDateStart = Date.valueOf(firstDayOfMonth);
@@ -343,8 +344,13 @@ public String getMonthMoneyLeft() {
 			return queryResult;
 	}
 	
-	
-public String getMonthByCategory(Month month, int rubLimit) {
+	/**
+	 * Расходы по категориям за указанный месяц
+	 * @param month расчетный месяц
+	 * @param rubLimit расходы превышающие эту величину будут учтены. 
+	 * @return Строка со списком расходов по категориям
+	 */
+public String getMonthByCategory(Month month, int rubLimit) { //можно обойтись и без аргумента, но оставлено на всякий случай (возможно будет удалено)
 		
 		String queryResult = "";
 		int total = 0;
@@ -386,7 +392,12 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		return queryResult + "\n\t ИТОГО: " + total;
 	}
 	
-	//запрос на крупные покупки 
+	/**
+	 * список дорогих (более <b>rubLimit</b>) покупок за указанный месяц
+	 * @param month месяц
+	 * @param rubLimit сумма более которой расходы будут отображены
+	 * @return список расходов строкой
+	 */
 	public String getExpensive(Month month, int rubLimit) {
 		
 		String queryResult = "";
@@ -432,7 +443,13 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		return queryResult + "\n ИТОГО: " + total;
 	}
 	
-	public String getIncome(Month month, int rubLimit) {
+	/**
+	 * Спписок доходов за указанный месяц
+	 * @param month
+	 * @param rubLimit
+	 * @return
+	 */
+	public String getIncome(Month month) {
 			
 			String queryResult = "";
 			int total = 0;
@@ -472,6 +489,11 @@ public String getMonthByCategory(Month month, int rubLimit) {
 			return queryResult + "\n ИТОГО: " + total;
 		}
 	
+	/**
+	 * сравнение доходов и расходов по месяцам
+	 * @return Список месяцев. Для каждого месяца общий доход, расход и разница между ними
+	 */
+	//TODO 	НЕ РАБОТАЕТ В MYSQL - ИСПРАВИТЬ!
 	public String getMonthsDifference() {
 		
 		String queryResult = "";
@@ -531,7 +553,11 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		this.status = status;
 	}
 	
-	//get start and end sqlDate for querymonth
+	/**
+	 * Две даты для использования в SQL запросах.
+	 * @param month
+	 * @return Первый и последний день определенного месяца.
+	 */
 	private Date[] get2Dates(Month month) {
 		
 		Date[] sqlDates = new Date[2];
@@ -545,7 +571,11 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		return sqlDates;
 	}
 	
-	//check if user input only numbers for RUB value
+	/**
+	 * Проверяет, что в поле "Сумма руб." введено корректное значение
+	 * @param str Символы введенные пользователем в поле "Сумма"
+	 * @return Корректно ли значение
+	 */
     public static boolean isInteger(String str) {
         if (str == null) {
             return false;
