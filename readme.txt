@@ -1,4 +1,6 @@
-
+04.08.19 Документирование классов DBHelper, PSQLTest
+внедрение значений полей для подключения к базе в DBHelper через аннотации @Value. Создание бина DBHelper (@Component) 
+-
 Описание таблиц
 
 create table consumptions(

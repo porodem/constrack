@@ -11,25 +11,31 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.time.format.DateTimeFormatter;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.stereotype.Component;
 
 import ru.porodem.constrack.DBScheme2.ConsumptionsTable;
 import ru.porodem.constrack.DBScheme2.IncomeTable;
 
 
-/**@author Dolgopolov Anatoliy */
+/**Создает подключение к БД.
+ *Содержит методы с закардхожеными запросами к БД 
+ * @author Dolgopolov Anatoliy
+ * */
+@Component("beanDBHelper")
 public class DBHelper {
 	
-	/* implemented with applicationContext.xml
-	private final String url = "jdbc:postgresql://localhost/demo";
-    private final String user = "postgres";
-    private final String password = "jkl";
-    */
-	
+	@Value("${dbUrl}")
 	private String url;
+	@Value("${dbUser}")
 	private String user;
+	@Value("${dbPass}")
 	private String password;
 	
+	/**
+	 * Информация о статусе подключения к БД выводимая в текстовом поле.
+	 */
     private String status;
     
     LocalDate today;
@@ -77,6 +83,11 @@ public class DBHelper {
         return status;
     }
 	
+	/**
+	 * Добавляет в БД запись о доходе
+	 * @param incomer источник дохода
+	 * @return строка с информацией о добавленной в БД записи или с ошибкой
+	 */
 	public String addIncome(int rub, String incomer, LocalDate date) {
 		
 		String result;
@@ -102,7 +113,7 @@ public class DBHelper {
     		System.out.print(e.getMessage());
     	} 
 		
-		if(rowsInserted>0) {
+		if(rowsInserted > 0) {
 			result = "Учтен доход: (" + incomer + ") " +  rub + " руб.";
     	} else {
     		result = PSQLTest.WARNING_DB_WRITE;
@@ -111,6 +122,10 @@ public class DBHelper {
 		return result;
 	}
 	
+	/**
+	 * Добавляет запись о расходе
+	 * @return строку с результатом добавления или ошибкой
+	 */
 	public String addConsumption(LocalDate date, String item, String category, int rub, int unexp) {
 		
 		String result;
@@ -149,6 +164,9 @@ public class DBHelper {
     	return result;
 	}
 	
+	/**
+	 * Получает сумму расходов за текущий день
+	 */
 	public String getTodayCost(LocalDate d) {
 		
 		String queryResult = "";
@@ -175,6 +193,9 @@ public class DBHelper {
     		return queryResult;
 	}
 	
+	/**
+	 * получить сумму расходов за последние 10 дней
+	 */
 	public String get10daysCost() {
 		
 		String queryResult = "";
@@ -205,6 +226,9 @@ public class DBHelper {
     		return queryResult;
 	}
 	
+	/**
+	 * Возвращает строку с суммой расходов за текущий месяц
+	 */
 	public String getCurrentMonthCost() {
 		
 		String queryResult = "";
@@ -234,7 +258,11 @@ public class DBHelper {
     		return queryResult;
 	}
 	
-public String getMonthMoneyLeft() {
+	/**
+	 * Сколько средств осталось на этот месяц. Это разница между доходами прошлого месяца и суммой расходов за текущий месяц.
+	 * @return Строка. Количество средств доступных для трат в текущем месяце. 
+	 */
+	public String getMonthMoneyLeft() {
 		
 		String queryResult = "";
 		int currentMonthLength = today.lengthOfMonth();
@@ -273,7 +301,11 @@ public String getMonthMoneyLeft() {
     		return queryResult;
 	}
 
-//непредвиденные расходы
+	/**
+	 * Непредвиденные расходы
+	 * @param month расчетный месяц
+	 * @return возвращает строку со списком непредвиденных покупок за текущий месяц
+	 */
 	public String getUnexpSpends(Month month) {
 		
 		String queryResult = "";
@@ -317,7 +349,12 @@ public String getMonthMoneyLeft() {
 			return queryResult;
 	}
 	
-	
+	/**
+	 * Расходы по категориям за указанный месяц
+	 * @param month расчетный месяц
+	 * @param rubLimit расходы превышающие эту величину будут учтены. 
+	 * @return Строка со списком расходов по категориям
+	 */
 public String getMonthByCategory(Month month, int rubLimit) {
 		
 		String queryResult = "";
@@ -360,7 +397,12 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		return queryResult + "\n\t ИТОГО: " + total;
 	}
 	
-	//запрос на крупные покупки 
+/**
+ * список дорогих (более <b>rubLimit</b>) покупок за указанный месяц
+ * @param month месяц
+ * @param rubLimit сумма более которой расходы будут отображены
+ * @return список расходов строкой
+ */
 	public String getExpensive(Month month, int rubLimit) {
 		
 		String queryResult = "";
@@ -406,6 +448,12 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		return queryResult + "\n ИТОГО: " + total;
 	}
 	
+	/**
+	 * Спписок доходов за указанный месяц
+	 * @param month
+	 * @param rubLimit
+	 * @return
+	 */
 	public String getIncome(Month month, int rubLimit) {
 			
 			String queryResult = "";
@@ -446,6 +494,10 @@ public String getMonthByCategory(Month month, int rubLimit) {
 			return queryResult + "\n ИТОГО: " + total;
 		}
 	
+	/**
+	 * сравнение доходов и расходов по месяцам
+	 * @return Список месяцев. Для каждого месяца общий доход, расход и разница между ними
+	 */
 	public String getMonthsDifference() {
 		
 		String queryResult = "";
@@ -505,7 +557,11 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		this.status = status;
 	}
 	
-	//get start and end sqlDate for querymonth
+	/**
+	 * Две даты для использования в SQL запросах.
+	 * @param month
+	 * @return Первый и последний день определенного месяца.
+	 */
 	private Date[] get2Dates(Month month) {
 		
 		Date[] sqlDates = new Date[2];
@@ -518,30 +574,5 @@ public String getMonthByCategory(Month month, int rubLimit) {
 		
 		return sqlDates;
 	}
-	
-	//check if user input only numbers for RUB value
-    public static boolean isInteger(String str) {
-        if (str == null) {
-            return false;
-        }
-        int length = str.length();
-        if (length == 0) {
-            return false;
-        }
-        int i = 0;
-        if (str.charAt(0) == '-') {
-            if (length == 1) {
-                return false;
-            }
-            i = 1;
-        }
-        for (; i < length; i++) {
-            char c = str.charAt(i);
-            if (c < '0' || c > '9') {
-                return false;
-            }
-        }
-        return true;
-    }
 
 }

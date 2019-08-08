@@ -44,26 +44,15 @@ import javax.swing.JTextArea;
 import javax.swing.JRadioButton;
 import javax.swing.DropMode;
 
-//change import src.DBScheme2 to select right DB
+//change import src.DBScheme2 to select right DB (in DBHelper.java) !!!
+
 public class PSQLTest extends JFrame implements ItemListener{
 	
-	private final String WARNING_NUM = "В поле сумма (руб.) допустимы только цифры!";
-	public static final String WARNING_DB_WRITE = "Ошибка записи в базу";	
-	private final String ERROR_DB_CONNECTION = "Ошибка подключения к базе";	
 	
-	private static final int BTN_IN_USE_EXPENSIVE = 1;
-	private static final int BTN_IN_USE_CATEGORY = 2;
-	private static final int BTN_IN_USE_INCOME = 3;
-	private static final int BTN_IN_USE_UNEXPECTED = 4;
-	
-	private int btnInUse = 0;
-	
-	
-	private String rubInputType = "";
-	
-	Month queryMonth;
 	
 	public PSQLTest() {
+		
+		//* * * * *  GUI ELEMENTS * * * * * *
 		
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setTitle("Constrack");
@@ -173,21 +162,6 @@ public class PSQLTest extends JFrame implements ItemListener{
 		txtStatus.setFont(new Font("Tahoma", Font.PLAIN, 11));
 		txtStatus.setBounds(24, 526, 351, 14);
 		getContentPane().add(txtStatus);
-		
-		
-		context = new ClassPathXmlApplicationContext(
-				"applicationContext.xml");
-		
-		//dbhelper = new DBHelper();
-		dbhelper = context.getBean("beanDBHelper",DBHelper.class);
-		
-		if(dbhelper.isConnectOk()?true:false) {
-			txtStatus.setText("connected");
-			txtStatus.setForeground(Color.GREEN);
-		} else {
-			txtStatus.setText(ERROR_DB_CONNECTION);
-			txtStatus.setForeground(Color.RED);
-		}
 		
 		textArea = new JTextArea();
 		textArea.setLineWrap(true);
@@ -300,12 +274,22 @@ public class PSQLTest extends JFrame implements ItemListener{
 		
 		
 		queryMonth = LocalDate.now().getMonth();
+		
+		context = new ClassPathXmlApplicationContext(
+				"applicationContext.xml");
+		
+		//dbhelper = new DBHelper();
+				dbhelper = context.getBean("beanDBHelper",DBHelper.class);
+				
+				if(dbhelper.isConnectOk()?true:false) {
+					txtStatus.setText("connected");
+					txtStatus.setForeground(Color.GREEN);
+				} else {
+					txtStatus.setText(ERROR_DB_CONNECTION);
+					txtStatus.setForeground(Color.RED);
+				}
 
 	}
-	
-	ClassPathXmlApplicationContext context;
-    
-    DBHelper dbhelper;
    
     private JButton btnShowExpensive;
     private JButton btnShowUnexp;
@@ -325,27 +309,62 @@ public class PSQLTest extends JFrame implements ItemListener{
     private JLabel lblMonthCost;
     private JLabel lblMoneyLeft;
     private JLabel txtStatus;
+    private JLabel label_2;
     private JTextArea textArea; 
     
     private JRadioButton radioIncome;
     private JRadioButton radioCost;
     private JRadioButton radioQuery;
     
+    private final String WARNING_NUM = "В поле сумма (руб.) допустимы только цифры!";
+	public static final String WARNING_DB_WRITE = "Ошибка записи в базу";	
+	private final String ERROR_DB_CONNECTION = "Ошибка подключения к базе";	
+	
+	private static final int BTN_IN_USE_EXPENSIVE = 1;
+	private static final int BTN_IN_USE_CATEGORY = 2;
+	private static final int BTN_IN_USE_INCOME = 3;
+	private static final int BTN_IN_USE_UNEXPECTED = 4;
+	
+	/**
+	 * идентификатор кнопки которая может нажиматься несколько раз для получения различных результатов. Одна из констант, например: {@link PSQLTest#BTN_IN_USE_EXPENSIVE}
+	 */
+	private int btnInUse = 0;	
+	
+	/**
+	 * Определяет, что собой представляют цифры введенные в поле "сумма".
+	 * Может быть "<b>income</b>" или "<b>cost</b>"
+	 */
+	private String rubInputType = "";
+	
+	Month queryMonth;
+	
+	ClassPathXmlApplicationContext context;
+    
+    DBHelper dbhelper;
+    
     String addedTodayLog = "";
     String recordInfo = "";
-    private JLabel label_2;
-    
-    
+
+    /**
+     * Обновляет текст в поле информации
+     * @param newRec Строка которая добавится присоединится к строке {@link PSQLTest#addedTodayLog}
+     */
     public void updateTextArea(String newRec) {
     	addedTodayLog = addedTodayLog + newRec + "\n";
     	textArea.setText(addedTodayLog); 
     }
     
+    /**
+     * Очищает текстовое поле
+     */
     public void cleanTextArea() {
     	addedTodayLog = "";
     	textArea.setText(addedTodayLog); 
     }
     
+    /**
+     * Добавление записи о доходе в БД.
+     */
     public void addIncome() {
     	
     	if(!isInteger(txSum.getText())) {
@@ -365,6 +384,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     	txSum.setText("");
     }    
     
+    /**
+     * Добавление в БД записи о расходе
+     */
     public void addConsumption() {
     	
     	if(!isInteger(txSum.getText())) {
@@ -388,6 +410,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     	getSpendStatistic();
     }
     
+    /**
+     * Действие кнопки "Непредвиденные расходы"
+     */
     public void showUnexpSpends() {  
     	
     	if(btnInUse != BTN_IN_USE_UNEXPECTED) {
@@ -406,6 +431,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     	queryMonth = queryMonth.minus(1);
     }
     
+    /**
+     * Действие для кнопки "Показать дорогие расходы"
+     */
     public void showExpensive() {
     	
     	//check which button was used last time, it other then reset month to current month
@@ -436,6 +464,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     	btnShowExpensive.setText(monthString + " > " + rubSum );
     }
     
+    /**
+     * Для кнопки "Расходы по категориям за месяц"
+     */
     private void showMonthByCat() {
     	
     	if(btnInUse != BTN_IN_USE_CATEGORY) {
@@ -456,6 +487,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     	btnShowCategMnth.setText(monthString );
     }
     
+    /**
+     * Для кнопки "Показать доходы"
+     */
     private void showIncome() {
     	
     	if(btnInUse != BTN_IN_USE_INCOME) {
@@ -477,11 +511,17 @@ public class PSQLTest extends JFrame implements ItemListener{
     	btnShowIncomes.setText(monthString );
     }
     
+    /**
+     * Для кнопки "Разница между доходом и расходом"
+     */
     private void showDifference() {
     	String result = dbhelper.getMonthsDifference();
     	updateTextArea(result);
     }
     
+    /**
+     * Обновляет статистику расходов за разные промежутки времени и отображает их.
+     */
     public void getSpendStatistic() {    		
     		String todayCost = dbhelper.getTodayCost(LocalDate.now());		
     		lblTodayCost.setText(todayCost); 
@@ -568,7 +608,11 @@ public class PSQLTest extends JFrame implements ItemListener{
 		
 	}
 	
-	//set access for right elements (disable or enable) on radio change
+	/**
+	 * Определяет доступ к элементам интерфейса, в зависимости от положений radiobutton
+	 * @param isCost <code>true</code> если включен режим записи расходов <code>false</code> если режим записи доходов
+	 * @param isQuery включен ли режим отчета
+	 */
 	private void isRadioCost(boolean isCost, boolean isQuery) {		
 		boolean b = isQuery?isCost:!isCost;
 		comboIncomer.setEnabled(b);
