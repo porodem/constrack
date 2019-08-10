@@ -36,7 +36,7 @@ public class DBHelper {
 	/**
 	 * Информация о статусе подключения к БД выводимая в текстовом поле.
 	 */
-    private String status;
+    static boolean status;
     
     LocalDate today;
     LocalDate firstDayOfMonth;
@@ -62,24 +62,20 @@ public class DBHelper {
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(url, user, password);
-            setStatus("connected");
+            setStatus(true);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
- 
         return conn;
     }
 	
 	public boolean isConnectOk() {
-		boolean status = false;
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(url, user, password);
-            status = true;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
- 
+		try(Connection conn =this.connect()) {
+			
+		} catch (SQLException e) {
+			e.getMessage();
+		}								
+									 
         return status;
     }
 	
@@ -189,7 +185,6 @@ public class DBHelper {
     	catch(SQLException e) {
         	System.out.print(e.getMessage());	
         	}  
-    	
     		return queryResult;
 	}
 	
@@ -548,12 +543,12 @@ public String getMonthByCategory(Month month, int rubLimit) {
 	}
 
 
-	public String getStatus() {
+	public boolean getStatus() {
 		return status;
 	}
 
 
-	public void setStatus(String status) {
+	public void setStatus(boolean status) {
 		this.status = status;
 	}
 	

@@ -46,8 +46,7 @@ import javax.swing.DropMode;
 
 //change import src.DBScheme2 to select right DB (in DBHelper.java) !!!
 
-public class PSQLTest extends JFrame implements ItemListener{
-	
+public class PSQLTest extends JFrame implements ItemListener{	
 	
 	
 	public PSQLTest() {
@@ -271,17 +270,17 @@ public class PSQLTest extends JFrame implements ItemListener{
 		lblPrevMonth.setBounds(240, 249, 46, 14);
 		getContentPane().add(lblPrevMonth);
 		
-		
+		// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
 		
 		queryMonth = LocalDate.now().getMonth();
 		
 		context = new ClassPathXmlApplicationContext(
 				"applicationContext.xml");
 		
-		//dbhelper = new DBHelper();
+				//dbhelper = new DBHelper();
 				dbhelper = context.getBean("beanDBHelper",DBHelper.class);
 				
-				if(dbhelper.isConnectOk()?true:false) {
+				if(dbhelper.isConnectOk()) {
 					txtStatus.setText("connected");
 					txtStatus.setForeground(Color.GREEN);
 				} else {
@@ -344,7 +343,16 @@ public class PSQLTest extends JFrame implements ItemListener{
     
     String addedTodayLog = "";
     String recordInfo = "";
-
+    
+    public static void main(String[] args) {
+		
+		PSQLTest t = new PSQLTest();
+		t.setSize(new Dimension(440,590));
+		t.setVisible(true);
+		t.getSpendStatistic();
+		
+	}
+    
     /**
      * Обновляет текст в поле информации
      * @param newRec Строка которая добавится присоединится к строке {@link PSQLTest#addedTodayLog}
@@ -579,14 +587,7 @@ public class PSQLTest extends JFrame implements ItemListener{
         return true;
     }
 
-	public static void main(String[] args) {
-		
-		PSQLTest t = new PSQLTest();
-		t.setSize(new Dimension(440,590));
-		t.setVisible(true);
-		t.getSpendStatistic();
-		
-	}
+	
 
 	@Override
 	public void itemStateChanged(ItemEvent e) {
