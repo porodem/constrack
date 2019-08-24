@@ -277,7 +277,6 @@ public class PSQLTest extends JFrame implements ItemListener{
 		context = new ClassPathXmlApplicationContext(
 				"applicationContext.xml");
 		
-				//dbhelper = new DBHelper();
 				dbhelper = context.getBean("beanDBHelper",DBHelper.class);
 				
 				if(dbhelper.isConnectOk()) {
@@ -331,7 +330,7 @@ public class PSQLTest extends JFrame implements ItemListener{
 	
 	/**
 	 * Определяет, что собой представляют цифры введенные в поле "сумма".
-	 * Может быть "<b>income</b>" или "<b>cost</b>"
+	 * Может быть "<b>income</b>"(доход) или "<b>cost</b>"(расход).
 	 */
 	private String rubInputType = "";
 	
@@ -357,7 +356,7 @@ public class PSQLTest extends JFrame implements ItemListener{
      * Обновляет текст в поле информации
      * @param newRec Строка которая добавится присоединится к строке {@link PSQLTest#addedTodayLog}
      */
-    public void updateTextArea(String newRec) {
+    private void updateTextArea(String newRec) {
     	addedTodayLog = addedTodayLog + newRec + "\n";
     	textArea.setText(addedTodayLog); 
     }
@@ -365,7 +364,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     /**
      * Очищает текстовое поле
      */
-    public void cleanTextArea() {
+    private void cleanTextArea() {
     	addedTodayLog = "";
     	textArea.setText(addedTodayLog); 
     }
@@ -373,9 +372,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     /**
      * Добавление записи о доходе в БД.
      */
-    public void addIncome() {
+    private void addIncome() {
     	
-    	if(!isInteger(txSum.getText())) {
+    	if(!ConstrackService.isInteger(txSum.getText())) {
     		updateTextArea(WARNING_NUM);
     		return;
     	}
@@ -395,9 +394,9 @@ public class PSQLTest extends JFrame implements ItemListener{
     /**
      * Добавление в БД записи о расходе
      */
-    public void addConsumption() {
+    private void addConsumption() {
     	
-    	if(!isInteger(txSum.getText())) {
+    	if(!ConstrackService.isInteger(txSum.getText())) {
     		updateTextArea(WARNING_NUM);
     		return;
     	}
@@ -421,7 +420,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     /**
      * Действие кнопки "Непредвиденные расходы"
      */
-    public void showUnexpSpends() {  
+    private void showUnexpSpends() {  
     	
     	if(btnInUse != BTN_IN_USE_UNEXPECTED) {
         	btnInUse = BTN_IN_USE_UNEXPECTED;
@@ -442,7 +441,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     /**
      * Действие для кнопки "Показать дорогие расходы"
      */
-    public void showExpensive() {
+    private void showExpensive() {
     	
     	//check which button was used last time, it other then reset month to current month
     	if(btnInUse != BTN_IN_USE_EXPENSIVE) {
@@ -454,7 +453,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     	
     	int rubSum = 0;
     	
-    	if(!isInteger(txSum.getText())) {
+    	if(!ConstrackService.isInteger(txSum.getText())) {
     		//updateTextArea(WARNING_NUM);
     		rubSum = 1000;
     	} else {
@@ -468,7 +467,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     	updateTextArea("\n" + "расходы " + monthString +  " больше " + rubSum + "\n");
     	updateTextArea(expeniveList);
     	queryMonth = queryMonth.minus(1);
-    	this.showLog(queryMonth.toString());
+    	ConstrackService.showLog(queryMonth.toString());
     	btnShowExpensive.setText(monthString + " > " + rubSum );
     }
     
@@ -491,7 +490,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     	updateTextArea("\n" + "расходы " + monthString + " по категориям\n");
     	updateTextArea(result);
     	queryMonth = queryMonth.minus(1);
-    	this.showLog(queryMonth.toString());
+    	ConstrackService.showLog(queryMonth.toString());
     	btnShowCategMnth.setText(monthString );
     }
     
@@ -515,7 +514,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     	updateTextArea("\n" + "доходы " +  monthString +"\n");
     	updateTextArea(result);
     	queryMonth = queryMonth.minus(1);
-    	this.showLog(queryMonth.toString() + " " + monthString);
+    	ConstrackService.showLog(queryMonth.toString() + " " + monthString);
     	btnShowIncomes.setText(monthString );
     }
     
@@ -530,7 +529,7 @@ public class PSQLTest extends JFrame implements ItemListener{
     /**
      * Обновляет статистику расходов за разные промежутки времени и отображает их.
      */
-    public void getSpendStatistic() {    		
+    private void getSpendStatistic() {    		
     		String todayCost = dbhelper.getTodayCost(LocalDate.now());		
     		lblTodayCost.setText(todayCost); 
     		
@@ -548,44 +547,18 @@ public class PSQLTest extends JFrame implements ItemListener{
     		lblMoneyLeft.setText(moneyLeft);
     } 
     
-    public void refreshStatus(String newStatus) {
+    private void refreshStatus(String newStatus) {
     	txtStatus.setText(newStatus);
     }
     
-    //for debbug
-    public void showLog(String msg) {
-    	System.out.println("Log: " + msg);
-    }
     
-    public int getSumFieldValue() {
+    
+    private int getSumFieldValue() {
     	return Integer.valueOf(txSum.getText());
     }
     
     
-    //check if user input only numbers for RUB value
-    public static boolean isInteger(String str) {
-        if (str == null) {
-            return false;
-        }
-        int length = str.length();
-        if (length == 0) {
-            return false;
-        }
-        int i = 0;
-        if (str.charAt(0) == '-') {
-            if (length == 1) {
-                return false;
-            }
-            i = 1;
-        }
-        for (; i < length; i++) {
-            char c = str.charAt(i);
-            if (c < '0' || c > '9') {
-                return false;
-            }
-        }
-        return true;
-    }
+    
 
 	
 
@@ -593,17 +566,17 @@ public class PSQLTest extends JFrame implements ItemListener{
 	public void itemStateChanged(ItemEvent e) {
 		if(radioCost.isSelected()) {
 			rubInputType = "cost";
-			showLog("cost");
+			ConstrackService.showLog("cost");
 			isRadioCost(true, false);
 			
 		} else if(radioIncome.isSelected()) {
 			rubInputType = "income";
-			showLog("income");
+			ConstrackService.showLog("income");
 			isRadioCost(false, false);
 		}
 		else if(radioQuery.isSelected()) {
 			rubInputType = "query";
-			showLog("query");
+			ConstrackService.showLog("query");
 			isRadioCost(true, true);
 		}
 		

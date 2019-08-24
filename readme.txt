@@ -1,3 +1,4 @@
+https://stackoverflow.com/questions/411517/management-of-java-string-resources
 10,08,19 Оптимизация кода проверки подключения к БД
 
 04.08.19 Документирование классов DBHelper, PSQLTest

@@ -184,7 +184,8 @@ public class DBHelper {
     	}
     	catch(SQLException e) {
         	System.out.print(e.getMessage());	
-        	}  
+        }  
+    	
     		return queryResult;
 	}
 	
@@ -248,7 +249,7 @@ public class DBHelper {
     	}
     	catch(SQLException e) {
         	System.out.print(e.getMessage());	
-        	}  
+        }  
     	
     		return queryResult;
 	}
