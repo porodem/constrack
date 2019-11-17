@@ -82,6 +82,8 @@ public class DBHelper {
 	/**
 	 * Добавляет в БД запись о доходе
 	 * @param incomer источник дохода
+	 * @param rub доход в рублях
+	 * @param date когда был получен доход
 	 * @return строка с информацией о добавленной в БД записи или с ошибкой
 	 */
 	public String addIncome(int rub, String incomer, LocalDate date) {
@@ -554,9 +556,9 @@ public String getMonthByCategory(Month month, int rubLimit) {
 	}
 	
 	/**
-	 * Две даты для использования в SQL запросах.
+	 * Первое и последнее число указанного месяца. Для использования в SQL запросах.
 	 * @param month
-	 * @return Первый и последний день определенного месяца.
+	 * @return Массив с двумя числами месяца (первым и последним).
 	 */
 	private Date[] get2Dates(Month month) {
 		

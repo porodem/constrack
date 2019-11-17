@@ -35,7 +35,7 @@ public class ConstrackService {
     }
     
   /**
-   * for debbug
+   * for debbug. Show logging messages.
    * @param msg
    */
     public static void showLog(String msg) {
